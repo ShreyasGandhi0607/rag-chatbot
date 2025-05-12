@@ -1,0 +1,34 @@
+streamlit
+langchain
+langchain-core
+langchain-community
+langchain-pinecone
+
+# Google Gemini (PALM) integration
+langchain-google-genai
+google-generativeai
+
+# Huggingface integration
+langchain-huggingface
+transformers
+huggingface-hub
+
+# Enviroment Variables management
+python-dotenv
+
+# Machine Learning Utilities
+numpy
+scikit-learn
+
+# pydantic
+pydantic
+
+# to view chain graph
+grandalf
+
+# pinecone import
+pinecone
+
+chromadb
+faiss-cpu
+PyPDF2
