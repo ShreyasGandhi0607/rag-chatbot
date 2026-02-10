@@ -1,28 +1,40 @@
 from graph import app
 
-CONFIG = {
-    "configurable": {
-        "thread_id": "multi-task-test"
+def run_conversation():
+    config = {
+        "configurable": {
+            "thread_id": "test-multi-task"
+        }
     }
-}
 
-def turn(user_input):
-    return app.invoke(
-        {"messages": [{"role": "user", "content": user_input}]},
-        config=CONFIG
-    )
+    state = {
+        "messages": [
+            {
+                "role": "user",
+                "content": "Procure code.com and transfer example.org"
+            }
+        ]
+    }
 
-# ---- TURN 1
-r = turn("Procure code.com and transfer example.org")
-print(r["messages"][-1]["content"])
-# → "What is your account ID?"
+    # Turn 1
+    state = app.invoke(state, config=config)
+    print(state["messages"][-1]["content"])
 
-# ---- TURN 2 (procurement)
-r = turn("Account id is 123")
-print(r["messages"][-1]["content"])
-# → "Procure Domain completed for code.com"
+    # Turn 2 – account id
+    state["messages"].append({
+        "role": "user",
+        "content": "Account id is 123"
+    })
+    state = app.invoke(state, config=config)
+    print(state["messages"][-1]["content"])
 
-# ---- TURN 3 (transfer)
-r = turn("Auth code is XYZ-999")
-print(r["messages"][-1]["content"])
-# → "Transfer completed for example.org"
+    # Turn 3 – auth code
+    state["messages"].append({
+        "role": "user",
+        "content": "Auth code is XYZ-999"
+    })
+    state = app.invoke(state, config=config)
+    print(state["messages"][-1]["content"])
+
+if __name__ == "__main__":
+    run_conversation()
