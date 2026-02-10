@@ -1,0 +1,103 @@
+"""
+Unit tests for decompose_tasks node
+
+Tests:
+1. Decomposes multiple intents correctly
+2. Appends assistant acknowledgement
+3. Does not re-run if tasks already exist
+"""
+
+from state import GlobalState, Task
+from nodes import decompose_tasks
+import nodes
+
+
+# ------------------------------------------------------------------
+# Mock classify_intent (NO real LLM call)
+# ------------------------------------------------------------------
+
+def mock_classify_intent(question: str, conversation_history=None):
+    return {
+        "tasks": [
+            {
+                "intent": "transfer",
+                "domain_name": "example.com",
+                "supporting_sentence": "Transfer example.com"
+            },
+            {
+                "intent": "billing_status",
+                "domain_name": None,
+                "supporting_sentence": "Check billing status"
+            }
+        ]
+    }
+
+
+# Inject mock into nodes module
+nodes.classify_intent = mock_classify_intent
+
+
+# ------------------------------------------------------------------
+# Test 1: Multi-task decomposition
+# ------------------------------------------------------------------
+
+def test_decompose_multiple_tasks():
+    state = GlobalState(
+        messages=[
+            {"role": "user", "content": "Transfer example.com and check billing"}
+        ]
+    )
+
+    new_state = decompose_tasks(state)
+
+    # Validate task count
+    assert len(new_state.tasks) == 2
+
+    # First task
+    assert new_state.tasks[0].intent == "transfer"
+    assert new_state.tasks[0].domain_name == "example.com"
+    assert new_state.tasks[0].topic == "domain_transfer"
+
+    # Second task
+    assert new_state.tasks[1].intent == "billing_status"
+    assert new_state.tasks[1].domain_name is None
+    assert new_state.tasks[1].topic == "domain_billing_status"
+
+    # Assistant acknowledgement
+    last_msg = new_state.messages[-1]
+    assert last_msg["role"] == "assistant"
+    assert "2 request" in last_msg["content"]
+
+
+# ------------------------------------------------------------------
+# Test 2: Do not re-run decomposition if tasks exist
+# ------------------------------------------------------------------
+
+def test_decompose_does_not_rerun():
+    state = GlobalState(
+        messages=[
+            {"role": "user", "content": "Transfer example.com"}
+        ],
+        tasks=[
+            Task(
+                topic="domain_transfer",
+                intent="transfer",
+                domain_name="existing.com"
+            )
+        ]
+    )
+
+    new_state = decompose_tasks(state)
+
+    assert len(new_state.tasks) == 1
+    assert new_state.tasks[0].domain_name == "existing.com"
+
+
+# ------------------------------------------------------------------
+# Manual execution support
+# ------------------------------------------------------------------
+
+if __name__ == "__main__":
+    test_decompose_multiple_tasks()
+    test_decompose_does_not_rerun()
+    print("✅ All decompose_tasks tests passed")
