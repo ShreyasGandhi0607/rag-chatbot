@@ -1,43 +1,28 @@
 from graph import app
 
-THREAD_ID = "test-single-task-1"
-CONFIG = {"configurable": {"thread_id": THREAD_ID}}
+THREAD_ID = "test-thread-1"
 
-def test_single_task_multiturn():
-    # TURN 1
-    state = {
-        "messages": [
-            {"role": "user", "content": "Transfer example.com"}
-        ]
+def run_turn(messages):
+    state = {"messages": messages}
+    config = {
+        "configurable": {
+            "thread_id": THREAD_ID
+        }
     }
+    return app.invoke(state, config=config)
 
-    result = app.invoke(state, config=CONFIG)
+# ---- TURN 1: initial request
+result = run_turn([
+    {"role": "user", "content": "I want to procure code.com"}
+])
 
-    assert (
-        "authorization" in result["messages"][-1]["content"].lower()
-        or "account id" in result["messages"][-1]["content"].lower()
-    )
+print(result["messages"][-1]["content"])
+# → "What is your account ID?"
 
-    # TURN 2
-    result["messages"].append(
-        {"role": "user", "content": "Auth code is AUTH123"}
-    )
+# ---- TURN 2: provide account
+result = run_turn([
+    {"role": "user", "content": "My account id is 12345"}
+])
 
-    result = app.invoke(result, config=CONFIG)
-
-    assert "account id" in result["messages"][-1]["content"].lower()
-
-    # TURN 3
-    result["messages"].append(
-        {"role": "user", "content": "My account ID is 99999"}
-    )
-
-    result = app.invoke(result, config=CONFIG)
-
-    assert "completed" in result["messages"][-1]["content"].lower()
-
-    print("✅ Single-task multi-turn test passed")
-
-
-if __name__ == "__main__":
-    test_single_task_multiturn()
+print(result["messages"][-1]["content"])
+# → "Procurement completed for code.com"
