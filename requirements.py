@@ -12,3 +12,16 @@ FOLLOWUPS = {
     "account_id": "What is your account ID?",
     "settings_type": "What setting would you like to change?",
 }
+
+INTENT_NORMALIZATION = {
+    "transfer domain": "transfer",
+    "domain transfer": "transfer",
+    "transfer": "transfer",
+
+    "procure domain": "procurement",
+    "domain procurement": "procurement",
+    "procurement": "procurement",
+
+    "billing": "billing_status",
+    "billing status": "billing_status",
+}
