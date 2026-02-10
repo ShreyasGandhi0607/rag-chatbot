@@ -1,14 +1,9 @@
 def perform_action(state: GlobalState):
-    if not state.intent:
+    if not state.intent or state.task_completed:
         return state
 
     if state.intent == "procurement":
-        result = domain_procurement_flow(
-            domain=state.domain_name,
-            dis_response=state.dis_response,
-            business_reason=state.business_reason,
-            sub_account=state.sub_account
-        )
+        result = domain_procurement_flow(...)
         state.messages.append({
             "role": "assistant",
             "content": result["message"]
@@ -17,13 +12,8 @@ def perform_action(state: GlobalState):
     elif state.intent == "transfer":
         state.messages.append({
             "role": "assistant",
-            "content": f"Transfer completed for {state.domain_name}"
+            "content": "transfer_domain completed"
         })
 
-    else:
-        state.messages.append({
-            "role": "assistant",
-            "content": f"{state.intent} completed"
-        })
-
+    state.task_completed = True   # 🔒 CRITICAL
     return state
