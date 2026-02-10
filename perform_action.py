@@ -1,54 +1,29 @@
 def perform_action(state: GlobalState):
-    # Safety guard (important for retries)
-    if not state.intent or state.task_completed:
+    # Prevent duplicate execution (LangGraph re-runs nodes)
+    if state.task_completed or not state.intent:
         return state
 
-    result = None
+    if state.intent == "procurement":
+        result = handle_procurement(state)
 
-    # -------------------------------
-    # PROCURE DOMAIN
-    # -------------------------------
-    if state.intent == "procure_domain":
-        result = {
-            "status": "SUCCESS",
-            "action": "PROCURE_DOMAIN",
-            "domain": state.domain_name,
-            "account_id": state.account_id,
-            "order_id": "ORD-982374",
-            "message": f"Procure Domain completed for {state.domain_name}."
-        }
+    elif state.intent == "transfer":
+        result = handle_transfer(state)
 
-    # -------------------------------
-    # TRANSFER DOMAIN
-    # -------------------------------
-    elif state.intent == "transfer_domain":
-        result = {
-            "status": "SUCCESS",
-            "action": "TRANSFER_DOMAIN",
-            "domain": state.domain_name,
-            "account_id": state.account_id,
-            "transfer_id": "TRF-773892",
-            "message": f"Transfer initiated for {state.domain_name}."
-        }
-
-    # -------------------------------
-    # UNKNOWN INTENT (defensive)
-    # -------------------------------
     else:
         result = {
             "status": "ERROR",
+            "action": "UNKNOWN",
             "message": f"Unsupported intent: {state.intent}"
         }
 
-    # -------------------------------
-    # Persist results
-    # -------------------------------
+    # Save structured result
     state.last_action_result = result
 
+    # Send user-facing message
     state.messages.append({
         "role": "assistant",
         "content": result["message"]
     })
 
-    state.task_completed = True  # 🔐 REQUIRED for next_task routing
+    state.task_completed = True
     return state
