@@ -1,39 +1,46 @@
 from graph import app
 
+THREAD_ID = "test-single-task-1"
+
 def test_single_task_multiturn():
-    # TURN 1: user starts request
     state = {
         "messages": [
             {"role": "user", "content": "Transfer example.com"}
         ]
     }
 
-    result = app.invoke(state)
-
-    # Agent should ask for a missing field
-    last_message = result["messages"][-1]["content"]
-    assert "authorization code" in last_message.lower() or "account id" in last_message.lower()
-
-    # TURN 2: user provides auth code
-    result["messages"].append(
-        {"role": "user", "content": "The auth code is AUTH123"}
+    # Turn 1
+    result = app.invoke(
+        state,
+        config={"configurable": {"thread_id": THREAD_ID}}
     )
 
-    result = app.invoke(result)
+    assert "authorization" in result["messages"][-1]["content"].lower() \
+        or "account id" in result["messages"][-1]["content"].lower()
 
-    last_message = result["messages"][-1]["content"]
-    assert "account id" in last_message.lower()
+    # Turn 2
+    result["messages"].append(
+        {"role": "user", "content": "Auth code is AUTH123"}
+    )
 
-    # TURN 3: user provides account ID
+    result = app.invoke(
+        result,
+        config={"configurable": {"thread_id": THREAD_ID}}
+    )
+
+    assert "account id" in result["messages"][-1]["content"].lower()
+
+    # Turn 3
     result["messages"].append(
         {"role": "user", "content": "My account ID is 99999"}
     )
 
-    result = app.invoke(result)
+    result = app.invoke(
+        result,
+        config={"configurable": {"thread_id": THREAD_ID}}
+    )
 
-    # Final response
-    last_message = result["messages"][-1]["content"]
-    assert "completed" in last_message.lower()
+    assert "completed" in result["messages"][-1]["content"].lower()
 
     print("✅ Single-task multi-turn test passed")
 
